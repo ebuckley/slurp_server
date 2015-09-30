@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/ebuckley/slurp_server/LRU"
 	"io"
 	"io/ioutil"
 	"log"
@@ -26,8 +27,7 @@ type cacheCheckRequest struct {
 var (
 	listenPort        string
 	serveDirectory    string
-	cache                   = make(map[string][]byte)
-	maxCacheSizeBytes int64 = 60 * 1024 * 1024
+	maxCacheSizeBytes int = 60 * 1024 * 1024
 	serverListener    net.Listener
 )
 
@@ -67,21 +67,25 @@ func getFile(filename string, cp chan *cachePutRequest, cacheCheck chan *cacheCh
 	}
 }
 func handleCache(cacheRequests chan *cacheCheckRequest, cachePuts chan *cachePutRequest) {
-	var cacheSize int64 = 0
+
+	lru := LRU.NewCache(maxCacheSizeBytes)
 
 	for {
 		select {
 		case cr := <-cacheRequests:
-			if cache[cr.name] == nil {
+
+			data, ok := lru.Get(cr.name)
+			if !ok {
 				cr.isNotCached <- true
 			} else {
 				cachePut := new(cachePutRequest)
 				cachePut.name = cr.name
-				cachePut.file = bytes.NewBuffer(cache[cr.name])
+				cachePut.file = bytes.NewBuffer(data)
 				cr.isCached <- cachePut
 			}
 		case cp := <-cachePuts:
-			//block until the file is sent
+
+			//block until the file has complely sent before updating the cache
 			fileSent := <-cp.fileIsSent
 
 			if fileSent == true {
@@ -89,11 +93,7 @@ func handleCache(cacheRequests chan *cacheCheckRequest, cachePuts chan *cachePut
 				if err != nil {
 					log.Println("err reading cachePutRequest on file", cp.name)
 				}
-				cacheSize = cacheSize + int64(len(buf))
-				if cacheSize > maxCacheSizeBytes {
-					log.Println("Warning: cache exceeded our maximum size")
-				}
-				cache[cp.name] = buf
+				lru.Push(cp.name, buf)
 			}
 		}
 	}
