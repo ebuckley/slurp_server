@@ -191,7 +191,7 @@ func main() {
 	cacheRequests := make(chan *cacheCheckRequest)
 	cachePuts := make(chan *cachePutRequest)
 
-	go handleCache(cacheRequests, cachePuts)
+	// go handleCache(cacheRequests, cachePuts)
 
 	//set up for interupts
 	sigs := make(chan os.Signal, 1)
