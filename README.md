@@ -14,3 +14,15 @@ The preceding example shows us how to invoke the built slurp_server to serve the
 - LRU cache implementation
 - safe closedown
 - good logging (subjectivly)
+
+#Tests
+I tested the LRU implementation, but nothing else is automatically tested (I'm a terrible terrible person I know)
+
+```
+#from the project directory
+$ cd LRU
+$ go test
+PASS
+ok  	github.com/ebuckley/slurp_server/LRU	0.004s
+
+```
