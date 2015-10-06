@@ -74,15 +74,16 @@ func handleCache(cacheRequests chan *cacheCheckRequest, cachePuts chan *cachePut
 		select {
 		case cr := <-cacheRequests:
 
-			data, ok := lru.Get(cr.name)
-			if !ok {
-				cr.isNotCached <- true
-			} else {
-				cachePut := new(cachePutRequest)
-				cachePut.name = cr.name
-				cachePut.file = bytes.NewBuffer(data)
-				cr.isCached <- cachePut
-			}
+			cr.isNotCached <- true
+			// data, ok := lru.Get(cr.name)
+			// if !ok {
+			// 	cr.isNotCached <- true
+			// } else {
+			// 	cachePut := new(cachePutRequest)
+			// 	cachePut.name = cr.name
+			// 	cachePut.file = bytes.NewBuffer(data)
+			// 	cr.isCached <- cachePut
+			// }
 		case cp := <-cachePuts:
 
 			//block until the file has complely sent before updating the cache
@@ -191,7 +192,7 @@ func main() {
 	cacheRequests := make(chan *cacheCheckRequest)
 	cachePuts := make(chan *cachePutRequest)
 
-	// go handleCache(cacheRequests, cachePuts)
+	go handleCache(cacheRequests, cachePuts)
 
 	//set up for interupts
 	sigs := make(chan os.Signal, 1)
